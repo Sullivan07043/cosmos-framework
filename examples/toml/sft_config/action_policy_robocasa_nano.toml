@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: OpenMDW-1.1
+# RoboCasa action-policy SFT run config for the `action_policy_robocasa_nano`
+# experiment. HSDP 2x8 (2 nodes x 8 GPUs), global batch 2048 at grad_accum 1.
+# Env: ROBOCASA_ROOT, BASE_CHECKPOINT_PATH, WAN_VAE_PATH, IMAGINAIRE_OUTPUT_ROOT.
+# P1 pilot: shrink with EXTRA_TAIL_OVERRIDES (max_iter, max_samples_per_batch).
+
+[job]
+task         = "vfm"
+experiment   = "action_policy_robocasa_nano"
+project      = "cosmos3_action_robocasa"
+group        = "action_sft"
+name         = "action_policy_robocasa_nano"
+wandb_mode   = "offline"
+
+[model]
+precision = "bfloat16"
+max_num_tokens_after_packing = 74000
+
+[model.parallelism]
+data_parallel_shard_degree     = 8
+data_parallel_replicate_degree = 2    # HSDP 2x8 = 16 ranks (2 nodes); set 1 for single-node smoke
+
+[model.activation_checkpointing]
+mode           = "selective"
+save_ops_regex = ["fmha"]
+
+[model.tokenizer]
+vae_path = "${oc.env:WAN_VAE_PATH}"
+
+[optimizer]
+lr = 5.0e-05
+
+[scheduler]
+cycle_lengths = [16000]
+warm_up_steps = [500]
+
+[trainer]
+max_iter        = 2000
+logging_iter    = 50
+grad_accum_iter = 1       # global batch = max_samples 128 x (shard 8 x replicate 2) x 1 = 2048
+
+[checkpoint]
+load_path = "${oc.env:BASE_CHECKPOINT_PATH}"
+save_iter = 250
