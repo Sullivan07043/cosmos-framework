@@ -39,6 +39,13 @@ set -uo pipefail
 # Repo root = parent of the wrapper's directory (examples/).
 WORKDIR="$(cd "$(dirname "${BASH_SOURCE[1]}")/.." && pwd)"
 
+# Activate the repo venv unless the caller's shell already has one active.
+# Without this, a non-interactive shell (ssh one-liner, cron, agent) resolves
+# torchrun to the system python and dies on missing modules.
+if [[ -z "${VIRTUAL_ENV:-}" && -f "$WORKDIR/.venv/bin/activate" ]]; then
+    source "$WORKDIR/.venv/bin/activate"
+fi
+
 # Anchor relative paths to $WORKDIR.
 [[ "$TOML_FILE" = /* ]] || TOML_FILE="$WORKDIR/$TOML_FILE"
 
