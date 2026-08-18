@@ -289,6 +289,11 @@ class CheckpointConfig:
     # Save the checkpoint every N iterations.
     save_iter: int = 999999999
 
+    # Save a final checkpoint at natural training end when the last iteration
+    # missed the save_iter boundary. Load-side behavior is unaffected, so a
+    # smoke run can set this False and still warm-start from load_path.
+    save_at_end: bool = True
+
     # Load state_dict to the models in strict mode. If True, `allow_partial_load` in dcp
     # planner will be set to False. DCP will raise an error if there are missing keys.
     # If False, `allow_partial_load` in dcp planner will be set to True. DCP will not
